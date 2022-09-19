@@ -95,7 +95,7 @@ var score = 0;
 let frame = 0;
 let gameover = false;
 const winningScore = 5;
-let level = 3;
+let level = 1;
 let defenderSlected = "";
 let pause = false;
 let startscreen = true;
@@ -345,9 +345,9 @@ canvas.addEventListener('click', function(){
     if(defenderSlected=='cannon') {
         set_weapon.play();
         if(numberResources >= 300){
-            defenders.push(new Defender(gridPositionX, gridPositionY, 0,-20,30, cannon_shoot,
-                red_cannon,25,6,512,288,
-             5,675,512,50,50,1,50,5,fire_ball,10,5,5, cannon_hit,false));
+            defenders.push(new Defender(gridPositionX, gridPositionY, 10,0,30, cannon_shoot,
+                red_cannon,25,6,290,234,
+             2.5,675,512,50,50,1,50,5,fire_ball,10,5,5, cannon_hit,false));
             numberResources -= 300;
         }else{
             floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
@@ -411,44 +411,45 @@ function handleDefenders(){
         }
     }
 }
-let jet_stroke = 'black';
-let fan_stroke = 'black';
-let cannon_stroke = 'black';
+let jet_fill = 'rgb(254,235,179, 0.5)';
+let fan_fill = 'rgb(254,235,179, 0.5)';
+let cannon_fill = 'rgb(254,235,179, 0.5)';
 canvas.addEventListener('click', function(){
     if(mouse.x > 30 && mouse.x < 140 && mouse.y < 90){
         set_weapon.play();
         defenderSlected = 'jet_man';
-        jet_stroke = '#873e23';
-        fan_stroke = 'black';
-        cannon_stroke = 'black';
+        jet_fill = 'rgb(254,235,179, 1)';
+        fan_fill = 'rgb(254,235,179, 0.5)';
+        cannon_fill = 'rgb(254,235,179, 0.5)';
     }else if(mouse.x > 160 && mouse.x < 270 && mouse.y < 90 && level >= 2){
         set_weapon.play();
         defenderSlected = 'fan';
-        jet_stroke = 'black';
-        fan_stroke = '#873e23';
-        cannon_stroke = 'black';
+        jet_fill = 'rgb(254,235,179, 0.5)';
+        fan_fill = 'rgb(254,235,179, 1)';
+        cannon_fill = 'rgb(254,235,179, 0.5)';
     }else if(mouse.x > 280 && mouse.x < 380 && mouse.y < 90 && level >= 2){
         set_weapon.play();
         defenderSlected = 'cannon';
-        jet_stroke = 'black';
-        fan_stroke = 'black';
-        cannon_stroke = '#873e23';
+        jet_fill = 'rgb(254,235,179, 0.5)';
+        fan_fill = 'rgb(254,235,179, 0.5)';
+        cannon_fill = 'rgb(254,235,179, 1)';
     }
 });
 function handleChooseDefender(){
-    ctx.fillStyle = 'rgb(234,182,118)';
-    ctx.fillRect(30,10,100,80);
-    ctx.strokeStyle = jet_stroke;
-    ctx.strokeRect(30,10,100,80);
+    ctx.fillStyle = jet_fill;
+    ctx.fillRect(30,5,100,90);
+    ctx.strokeRect(30,5,100,90);
     ctx.drawImage(jet_man, 0,0,881,639, 10,10,150, controlsBar.height/1.1);
-    ctx.fillRect(150,10,100,80);
-    ctx.strokeStyle = fan_stroke;
-    ctx.strokeRect(150,10,100,80);
+
+    ctx.fillStyle = fan_fill;
+    ctx.fillRect(150,5,100,90);
+    ctx.strokeRect(150,5,100,90);
     ctx.drawImage(fan, 0,0,1424,1221, 170,10,1424/17, 1221/17);
-    ctx.fillRect(270,10,100,80);
-    ctx.strokeStyle = cannon_stroke;
-    ctx.strokeRect(270,10,100,80);
-    ctx.drawImage(red_cannon, 0,0, 512, 386, 270,20,100, controlsBar.height/1.5);
+
+    ctx.fillStyle = cannon_fill;
+    ctx.fillRect(270,5,100,90);
+    ctx.strokeRect(270,5,100,90);
+    ctx.drawImage(red_cannon, 0,0, 290, 234, 270,10,100, 81);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -457,7 +458,7 @@ function handleChooseDefender(){
 class Enemy{
     constructor(vertialPosition,spriteWidth,spriteHeight, 
         maxFrame,spriteSheet, frameRate, sizeFactor, speed, health,
-        attackSpriteSheet, attackMaxFrame, Yoffset)
+        attackSpriteSheet, attackMaxFrame, Yoffset, Xoffset)
     {
         this.x = canvas.width,
         this.y = vertialPosition,
@@ -479,6 +480,7 @@ class Enemy{
         this.tmpSpriteSheet = spriteSheet;
         this.tmpMaxFrameRate = maxFrame;
         this.Yoffset = Yoffset;
+        this.Xoffset = Xoffset;
     }
     update(){
         this.x -= this.movement;
@@ -493,12 +495,12 @@ class Enemy{
         //ctx.fillStyle = 'green';
         //ctx.fillRect(this.x,this.y,this.width, this.height);
         ctx.drawImage(this.spriteSheet, this.frame * this.spriteWidth, 0
-            , this.spriteWidth, this.spriteHeight, this.x, this.y-this.Yoffset,this.spriteWidth/this.sizeFactor, 
+            , this.spriteWidth, this.spriteHeight, this.x-this.Xoffset, this.y-this.Yoffset,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
         ctx.fillStyle = 'green';
-        ctx.fillRect(this.x, this.y, 60*(this.health/this.maxHealth), 7);
+        ctx.fillRect(this.x+20, this.y, 60*(this.health/this.maxHealth), 7);
         ctx.fillStyle = 'red';
-        ctx.fillRect(this.x+60*(this.health/this.maxHealth), this.y, 60-60*(this.health/this.maxHealth), 7);
+        ctx.fillRect(this.x+20+60*(this.health/this.maxHealth), this.y, 60-60*(this.health/this.maxHealth), 7);
     }
 }
 function handleEnemy(){
@@ -511,7 +513,7 @@ function handleEnemy(){
         }
         if(enemies[i].health <= 0){
             let gainedResources = enemies[i].maxHealth / 2; 
-            floatingMessages.push(new FloatingMessages('+' + gainedResources,enemies[i].x,enemies[i].y,20,'gold'));
+            floatingMessages.push(new FloatingMessages('$+' + gainedResources,enemies[i].x,enemies[i].y,20,'gold'));
             numberResources += gainedResources;
             score += gainedResources;
             const findthisIndex = enemiesPositions.indexOf(enemies[i].y);
@@ -520,16 +522,16 @@ function handleEnemy(){
             i--;
         }
     }
-    if(level===1) addEnemy(800, 406, 572, 15, skeleton_walk, 5, 5, 0.2, 50,skeleton_throw_bone,9,20);
-    if(level===2) addEnemy(800, 406, 572, 15, skeleton_run, 5, 5, 0.5, 50, skeleton_throw_bone,9, 20);
-    if(level===3) addEnemy(400, 820, 500, 7, black_spider_walk, 5, 6, 0.5, 50, black_spider_bite, 6, 0);
+    if(level===1) addEnemy(800, 406, 572, 15, skeleton_walk, 5, 5, 0.2, 50,skeleton_throw_bone,9,10, -10);
+    if(level===2) addEnemy(800, 406, 572, 15, skeleton_run, 5, 5, 0.5, 50, skeleton_throw_bone,9, 10, -10);
+    if(level===3) addEnemy(400, 820, 500, 7, black_spider_walk, 5, 6, 0.5, 50, black_spider_bite, 6, 0, 20);
 }
 function addEnemy(rate, spriteWidth, spriteHeight, maxFrame, spriteSheet, frameRate, 
-    sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame, Yoffset){
+    sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame, Yoffset, Xoffset){
     if( frame % rate === 0 && score <= winningScore){
         let vertialPosition = Math.floor(Math.random()*5+1) * cellSize + cellGap;
         enemies.push(new Enemy(vertialPosition, spriteWidth, spriteHeight, maxFrame, 
-            spriteSheet, frameRate, sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame,Yoffset));
+            spriteSheet, frameRate, sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame,Yoffset,Xoffset));
         enemiesPositions.push(vertialPosition);
     }
 }
@@ -562,8 +564,8 @@ class Resources {
         }
     }
     draw(){
-        ctx.fillStyle = 'purple';
-        ctx.fillRect(this.x,this.y,this.width, this.height);
+        //ctx.fillStyle = 'purple';
+        //ctx.fillRect(this.x,this.y,this.width, this.height);
         ctx.drawImage(this.spriteSheet, this.frame * this.spriteWidth, 0
             , this.spriteWidth, this.spriteHeight, this.x-this.Xoff, this.y-this.Yoff,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
@@ -571,15 +573,15 @@ class Resources {
 }
 function handleResources(){
     if (frame % 500 === 0 && score < winningScore){
-        resources.push(new Resources(149,149,5,chinese_coin, coin_sound, 10,2.5, 30,0,0));
-        resources.push(new Resources(522,514,0,pumpkin, coin_sound, 50,5, 100,20,30));
+        //resources.push(new Resources(149,149,5,chinese_coin, coin_sound, 10,2.5, 30,0,0));
+        resources.push(new Resources(522,514,0,pumpkin, coin_sound, 50,7, 100,0,10));
     }
     for(let i = 0;i < resources.length;i++){
         resources[i].update()
         resources[i].draw()
         if(resources[i] && mouse.x && mouse.y && collision(resources[i], mouse)){
             resources[i].sound.play();
-            floatingMessages.push(new FloatingMessages('+' + resources[i].amount,mouse.x,mouse.y,25,'gold'));
+            floatingMessages.push(new FloatingMessages('$+' + resources[i].amount,mouse.x,mouse.y,25,'gold'));
             numberResources += resources[i].amount;
             resources.splice(i,1);
             i--;
@@ -630,7 +632,7 @@ function handleStartScreen(){
         ctx.font = 'bold 20px Cursive';
         ctx.fillText("    Very very far away, there is a villige in the forest called Modvo ", 100, 210); 
         ctx.fillText("There is a curse on this villiage, that every 10 years on Holloween", 100, 240); 
-        ctx.fillText("Press d to skip", 330, 20); 
+        ctx.fillText("Press d to skip", 350, 20); 
     }else if(frame>=400 && frame < 800){
         ctx.fillStyle = 'black';
         ctx.fillRect(0,0,canvas.width, canvas.height);
@@ -642,7 +644,7 @@ function handleStartScreen(){
         ctx.fillText("to the villiage. And they have just arrived. Only the smartest and ", 100, 300); 
         ctx.fillText("bravest warrior can save the villiage and the people.", 100, 330); 
         ctx.fillText("Are you ready to peotect the villiage?", 100, 360); 
-        ctx.fillText("Press d to skip", 330, 20); 
+        ctx.fillText("Press d to skip", 350, 20); 
     }
     else{
         startscreen_music.play();
@@ -684,6 +686,7 @@ addEventListener('keypress',function(e){
 })
 function handleRestart(){
     ctx.drawImage(letter,canvas.width/2-150,160,310,240);
+    ctx.fillStyle = 'black'
     ctx.font = 'bold 20px Cursive';
     ctx.fillText("AHAHAH, we had a great ", 330, 210); 
     ctx.fillText("meal. Be ready, we will", 330, 240); 
@@ -709,6 +712,7 @@ addEventListener('keypress',function(e){
 function handleInterLevel(level){
     if(level==1){
         ctx.drawImage(letter,canvas.width/2-150,160,310,240);
+        ctx.fillStyle = 'black'
         ctx.font = 'bold 20px Cursive';
         ctx.fillText("You are pretty good ", 330, 210); 
         ctx.fillText("But we are not gonna", 330, 240); 
@@ -717,6 +721,7 @@ function handleInterLevel(level){
         ctx.fillText("Press SPACE to CONTINUE", 310, 20); 
     }else if(level == 2){
         ctx.drawImage(letter,canvas.width/2-150,160,310,240);
+        ctx.fillStyle = 'black'
         ctx.font = 'bold 20px Cursive';
         ctx.fillText("I guess I have to ", 330, 210); 
         ctx.fillText("send the spider army", 330, 240); 
@@ -732,8 +737,8 @@ function animate(){
     background_music.play();
     if(!pause && !gameover && !startscreen && !interLevel){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(background, 0,controlsBar.height,canvas.width, canvas.height - controlsBar.height);
-        ctx.drawImage(controlbars, 0,0,controlsBar.width, controlsBar.height);
+        ctx.drawImage(background, 0,0,canvas.width, canvas.height);
+        //ctx.drawImage(controlbars, 0,0,controlsBar.width, controlsBar.height);
         ctx.drawImage(pause_img, 800,10,70, 70);
         ctx.drawImage(stat_bar, canvas.width-200,canvas.height-50,200, 50);
         handleChooseDefender();
