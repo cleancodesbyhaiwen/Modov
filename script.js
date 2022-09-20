@@ -106,6 +106,14 @@ const start_button = new Image();
 start_button.src = 'start_button.png';
 const start_button_pressed = new Image();
 start_button_pressed.src = 'start_button_pressed.png';
+const black_spider = new Image();
+black_spider.src = 'black_spider.png';
+const ghost = new Image();
+ghost.src = 'ghost.png';
+const pumpkinman = new Image();
+pumpkinman.src = 'pumpkinman.png';
+const skeleton = new Image();
+skeleton.src = 'skeleton.png';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Global Variables
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +129,7 @@ const floatingMessages = []
 var money = 300;
 var score = 0;
 let frame = 0;
-const winningScore = 5;
+const winningScore = 500;
 let level = 3;
 let defenderSlected = "";
 let gameover = false;
@@ -264,7 +272,7 @@ function handleProjectiles(){
         projectiles[i].draw();
 
         for(let j = 0;j < enemies.length;j++){
-            if(enemies[j] && projectiles[i] && collision(projectiles[i], enemies[j])){
+            if(enemies[j] && projectiles[i] && collision(projectiles[i], enemies[j]) && !enemies[j].died){
                 projectiles[i].hit_sound.play();
                 enemies[j].health -= projectiles[i].power
                 projectiles.splice(i,1);
@@ -281,7 +289,7 @@ function handleProjectiles(){
 // defender
 //////////////////////////////////////////////////////////////////////////////////////////
 class Defender{
-    constructor(x,y,Xoffset,Yoffset, health,shoot_sound, spriteSheet,frameRate,idleMaxFrame, 
+    constructor(x,y,Xoffset,Yoffset, health,shoot_sound, spriteSheet,frameRate,idleMinFrame, idleMaxFrame, 
         shootMinFrame, shootMaxFrame, spriteWidth, spriteHeight,sizeFactor, 
         projectileSpriteWidth,projectileSpriteHeight,projectileWidth,
         projectileHeight, projectileSpeed, projectilePower, projectileMaxFrame, projectileSpriteSheet,
@@ -296,6 +304,7 @@ class Defender{
         this.spriteSheet = spriteSheet;
         this.minFrame = 0;
         this.maxFrame = this.idleMaxFrame;
+        this.dileMinFrame = idleMinFrame;
         this.idleMaxFrame = idleMaxFrame;
         this.shootMinFrame = shootMinFrame;
         this.shootMaxFrame = shootMaxFrame;
@@ -354,7 +363,7 @@ class Defender{
             }
         }else{
             this.maxFrame = this.idleMaxFrame;
-            this.minFrame = 0;
+            this.minFrame = this.dileMinFrame;
             this.timer = 0;
         }
         if(frame % this.frameRate === 0){
@@ -378,7 +387,7 @@ canvas.addEventListener('click', function(){
         set_weapon.play();
         if(money >= 50){
             defenders.push(new Defender(gridPositionX, gridPositionY,20,0,20,jet_shoot_sound, 
-                jet_man, 18,0,0,4,881,639, 6,354,215,50,
+                jet_man, 18,0, 0,0,4,881,639, 6,354,215,50,
                 50,2,10,0,jet_man_bullet,8,5, -5, jet_hit_sound,false,false));
                 money -= 50;
         }else{
@@ -387,7 +396,7 @@ canvas.addEventListener('click', function(){
     }else if(defenderSlected=='fan'){
         set_weapon.play();
         if(money >= 400){
-            defenders.push(new Defender(gridPositionX, gridPositionY,-20,0,10,0,fan,5,
+            defenders.push(new Defender(gridPositionX, gridPositionY,-20,0,10,0,fan,5,0,
                 0, 0, 6,1424,1221,15,0,0,0,0,0,0,0,0,0,0,0,0,true,false));
                 money -= 400;
         }else{
@@ -397,7 +406,7 @@ canvas.addEventListener('click', function(){
         set_weapon.play();
         if(money >= 300){
             defenders.push(new Defender(gridPositionX, gridPositionY, 10,0,30, cannon_shoot,
-                red_cannon,25,0, 0, 6,290,234,
+                red_cannon,25,0,0, 0, 6,290,234,
              2.5,675,512,50,50,1,50,5,fire_ball,10,5,5, cannon_hit,false,false));
              money -= 300;
         }else{
@@ -408,7 +417,7 @@ canvas.addEventListener('click', function(){
         set_weapon.play();
         if(money >= 100){
             defenders.push(new Defender(gridPositionX,gridPositionY,0,0,20,0, fire,
-                5,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true))
+                5,0,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true))
                 money -= 100;
         }else{
             floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
@@ -416,7 +425,7 @@ canvas.addEventListener('click', function(){
     }else if(defenderSlected=='archer'){
         set_weapon.play();
         if(money >= 100){
-            defenders.push(new Defender(gridPositionX,gridPositionY,30,10,20,arrow_shoot_sound,archer,10,23,24,
+            defenders.push(new Defender(gridPositionX,gridPositionY,30,10,20,arrow_shoot_sound,archer,10,0,23,24,
                 29,777,627,6,577,100,50,50,2,10,0,arrow,10,5,-20,arrow_hit_sound,false,false))
                 money -= 100;
         }else{
@@ -439,26 +448,29 @@ function handleDefenders(){
         }
         for(let j = 0;j < enemies.length;j++){
 
-            if(defenders[i] && collision(defenders[i], enemies[j])){
+            if(defenders[i] && collision(defenders[i], enemies[j]) && !enemies[j].died){
                 eating.play();
-                enemies[j].spriteSheet = enemies[j].attackSpriteSheet;
+                enemies[j].frame = enemies[j].attackMinFrame;
+                enemies[j].minFrame = enemies[j].attackMinFrame;
                 enemies[j].maxFrame = enemies[j].attackMaxFrame;
                 enemies[j].movement = 0;
                 defenders[i].health -= 0.2;
                 if(defenders[i].isFire){
                     enemies[j].health -= 0.2;
                 }
-            }else{
-                enemies[j].spriteSheet = enemies[j].tmpSpriteSheet;
-                enemies[j].maxFrame = enemies[j].tmpMaxFrameRate;
+            }else if(!enemies[j].died){
+                enemies[j].frame = enemies[j].moveMinFrame;
+                enemies[j].minFrame = enemies[j].moveMinFrame;
+                enemies[j].maxFrame = enemies[j].moveMaxFrame;
                 enemies[j].movement = enemies[j].speed;
             }
-            if(defenders[i] && defenders[i].health <= 0){
+            if(defenders[i] && defenders[i].health <= 0 && !enemies[j].died){
                 defenders.splice(i,1);
                 i--;
                 enemies[j].movement = enemies[j].speed;
-                enemies[j].spriteSheet = enemies[j].tmpSpriteSheet;
-                enemies[j].maxFrame = enemies[j].tmpMaxFrameRate;
+                enemies[j].frame = enemies[j].moveMinFrame;
+                enemies[j].minFrame = enemies[j].moveMinFrame;
+                enemies[j].maxFrame = enemies[j].moveMaxFrame;
             }
         }
     }
@@ -536,87 +548,108 @@ function handleChooseDefender(){
 //////////////////////////////////////////////////////////////////////////////////////////
 // Enemy
 //////////////////////////////////////////////////////////////////////////////////////////
+
+
 class Enemy{
-    constructor(vertialPosition,spriteWidth,spriteHeight, 
-        maxFrame,spriteSheet, frameRate, sizeFactor, speed, health,
-        attackSpriteSheet, attackMaxFrame, Yoffset, Xoffset)
+    constructor(x, vertialPosition,spriteWidth,spriteHeight, 
+        spriteSheet, frameRate, sizeFactor, speed, health,
+        Yoffset, Xoffset, moveMaxFrame, moveMinFrame,
+        attackMinFrame, attackMaxFrame,dieMinFrame , dieMaxFrame, initialFrame)
     {
-        this.x = canvas.width,
+        this.x = x,
         this.y = vertialPosition,
         this.width = cellSize - cellGap * 2;
         this.height = cellSize - cellGap * 2;
         this.speed = speed;
-        this.normalSpeed = speed;
         this.fanspeed = speed/2;
-        this.movement = this.speed;
+        this.movement = speed;
         this.health = health;
-        this.maxHealth = this.health;
+        this.maxHealth = health;
         this.spriteHeight = spriteHeight
         this.spriteWidth = spriteWidth
-        this.frame = 0;
-        this.maxFrame = maxFrame;
+        this.frame = initialFrame;
+        this.maxFrame = moveMaxFrame;
+        this.minFrame = moveMinFrame;
+        this.moveMaxFrame = moveMaxFrame;
+        this.moveMinFrame = moveMinFrame;
+        this.attackMinFrame = attackMinFrame;
+        this.attackMaxFrame = attackMaxFrame;
+        this.dieMinFrame = dieMinFrame;
+        this.dieMaxFrame = dieMaxFrame;
         this.spriteSheet = spriteSheet;
         this.frameRate = frameRate;
         this.sizeFactor = sizeFactor;
-        this.attackSpriteSheet = attackSpriteSheet;
-        this.attackMaxFrame = attackMaxFrame;
-        this.tmpSpriteSheet = spriteSheet;
-        this.tmpMaxFrameRate = maxFrame;
         this.Yoffset = Yoffset;
         this.Xoffset = Xoffset;
+        this.died = false;
+        this.remove = false;
     }
     update(){
+        //console.log("min" + this.minFrame)
+        //console.log("max" + this.maxFrame)
         this.x -= this.movement;
         if(frame % this.frameRate === 0){
             this.frame++;
             if(this.frame >= this.maxFrame){
-                this.frame = 0;
+                if(this.frame == this.dieMaxFrame){
+                    this.remove = true;
+                }else{
+                    this.frame = this.minFrame;
+                }
             } 
         }
     }
     draw(){
-        ctx.fillStyle = 'green';
-        ctx.fillRect(this.x,this.y,this.width, this.height);
+        //ctx.fillStyle = 'green';
+        //ctx.fillRect(this.x,this.y,this.width, this.height);
+        console.log(this.frame)
         ctx.drawImage(this.spriteSheet, this.frame * this.spriteWidth, 0
             , this.spriteWidth, this.spriteHeight, this.x-this.Xoffset, this.y-this.Yoffset,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
-        ctx.fillStyle = 'green';
-        ctx.fillRect(this.x+20, this.y, 60*(this.health/this.maxHealth), 7);
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x+20+60*(this.health/this.maxHealth), this.y, 60-60*(this.health/this.maxHealth), 7);
+        if(!this.died){
+            ctx.fillStyle = 'green';
+            ctx.fillRect(this.x+20, this.y, 60*(this.health/this.maxHealth), 7);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x+20+60*(this.health/this.maxHealth), this.y, 60-60*(this.health/this.maxHealth), 7);
+        }
     }
 }
 function handleEnemy(){
-    
     for(let i = 0;i < enemies.length;i++){
         enemies[i].update();
         enemies[i].draw();
-        if  (enemies[i].x < -enemies[i].width){
-            gameover = true;
-            gameover_sound.play();
-        }
-        if(enemies[i].health <= 0){
-            let gainedResources = enemies[i].maxHealth / 2; 
-            floatingMessages.push(new FloatingMessages('$+' + gainedResources,enemies[i].x,enemies[i].y,20,'gold'));
-            money += gainedResources;
-            score += gainedResources;
+        if(enemies[i].remove){
             const findthisIndex = enemiesPositions.indexOf(enemies[i].y);
             enemies.splice(i,1);
             enemiesPositions.splice(findthisIndex,1);
             i--;
         }
+        if (enemies[i] && enemies[i].x < -enemies[i].width){
+            gameover = true;
+            gameover_sound.play();
+        }
+        if(enemies[i] && enemies[i].health <= 0 && !enemies[i].died){
+            enemies[i].movement = 0;
+            enemies[i].frame = enemies[i].dieMinFrame;
+            enemies[i].minFrame = enemies[i].dieMinFrame;
+            enemies[i].maxFrame = enemies[i].dieMaxFrame;
+            let gainedResources = enemies[i].maxHealth / 2; 
+            floatingMessages.push(new FloatingMessages('$+' + gainedResources,enemies[i].x,enemies[i].y,20,'gold'));
+            money += gainedResources;
+            score += gainedResources;
+            enemies[i].died = true;
+        }
         let affectedByFan = false;
         for(let j = 0;j < defenders.length;j++){
             if(defenders[j] && enemies[i] && defenders[j].isFan && defenders[j].y == enemies[i].y){
                     affectedByFan = true;
-
             }
         }
-        if(affectedByFan && enemies[i]) {
-            enemies[i].speed = enemies[i].fanspeed;
+        if(enemies[i]  && affectedByFan && !enemies[i].died) {
+            enemies[i].movement = enemies[i].fanspeed;
         }
-        else if(enemies[i]){
-            enemies[i].speed = enemies[i].normalSpeed;
+        else if(enemies[i] && !enemies[i].died){
+            enemies[i].movement = enemies[i].speed;
         }
     }
     if(level===1){
@@ -625,7 +658,11 @@ function handleEnemy(){
         addEnemy(200, 406, 572, 15, skeleton_walk, 5, 5, 0.2, 50,skeleton_throw_bone,9,5, -20);
         addEnemy(800, 406, 572, 15, skeleton_run, 5, 5, 0.5, 50, skeleton_throw_bone,9, 5, -20);
     }else if(level == 3){
-        addEnemy(500, 820, 500, 7, black_spider_walk, 5, 6, 0.5, 50, black_spider_bite, 6, 0, 20);
+        //addEnemy(250, 830, 510, black_spider, 5, 6, 0.5, 50, 0, 20, 30,23, 0,6,7,22,23);
+        //addEnemy(100,768,911,ghost,5,7,0.5,50,30,10,38,27,0,9,10,21,22);
+        //addEnemy(400, 703,851, pumpkinman, 5,7,0.5,50,25,0,24,17,25,36,0,16,17)
+        addEnemy(300, 416,582,skeleton,5,5,0.5,50,5,-20,60,45,35,44,0,18,35)
+        addEnemy(300, 416,582,skeleton,5,5,0.5,50,5,-20,34,19,35,44,0,18,19)
     }else if(level == 4){
         addEnemy(500, 820, 500, 7, black_spider_walk, 5, 6, 0.5, 50, black_spider_bite, 6, 0, 20);
         addEnemy(200, 406, 572, 15, skeleton_walk, 5, 5, 0.2, 50,skeleton_throw_bone,9,5, -20);
@@ -655,12 +692,15 @@ function handleEnemy(){
         addEnemy(300,768,911,11,ghost_move,5,7,0.5,50,ghost_attack,9,30,10);
     }
 }
-function addEnemy(rate, spriteWidth, spriteHeight, maxFrame, spriteSheet, frameRate, 
-    sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame, Yoffset, Xoffset){
+function addEnemy(rate, spriteWidth, spriteHeight, spriteSheet, frameRate, 
+    sizeFactor, speed, health, Yoffset, Xoffset,
+    moveMaxFrame, moveMinFrame, attackMinFrame, attackMaxFrame,dieMinFrame , dieMaxFrame, initialFrame){
     if( frame % rate === 0 && score <= winningScore){
         let vertialPosition = Math.floor(Math.random()*5+1) * cellSize + cellGap;
-        enemies.push(new Enemy(vertialPosition, spriteWidth, spriteHeight, maxFrame, 
-            spriteSheet, frameRate, sizeFactor, speed, health, attackSpriteSheet, attackMaxFrame,Yoffset,Xoffset));
+        let x = (spriteSheet==ghost) ? canvas.width - (Math.random()*300+100) : canvas.width;
+        enemies.push(new Enemy(x, vertialPosition, spriteWidth, spriteHeight, 
+            spriteSheet, frameRate, sizeFactor, speed, health, Yoffset,Xoffset,moveMaxFrame
+            ,moveMinFrame, attackMinFrame, attackMaxFrame,dieMinFrame , dieMaxFrame, initialFrame));
         enemiesPositions.push(vertialPosition);
     }
 }
