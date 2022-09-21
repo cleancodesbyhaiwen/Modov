@@ -37,6 +37,8 @@ const arrow_hit_sound = document.createElement('audio');
 arrow_hit_sound.src = 'arrow_hit_sound.mp3';
 const game_finish_music = document.createElement('audio');
 game_finish_music.src = 'game_finish_music.mp3';
+const button_press_sound = document.createElement('audio');
+button_press_sound.src = 'button_press_sound.flac';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Sprite Sheets
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +67,7 @@ jet_man.src = 'jet_man.png';
 const jet_man_bullet = new Image();
 jet_man_bullet.src = 'jet_man_bullet.png';
 const startscreen_background = new Image();
-startscreen_background.src = 'startscreen_background.png';
+startscreen_background.src = 'startscreen_background.jpg';
 const skeleton_laugh = new Image();
 skeleton_laugh.src = 'skeleton_laugh.png';
 const startscreen_dialog = new Image();
@@ -82,8 +84,8 @@ const pause_pressed = new Image();
 pause_pressed.src = 'pause_pressed.png';
 const choose_defender_background = new Image();
 choose_defender_background.src = 'choose_defender_background.png';
-const choose_defender_background_purple = new Image();
-choose_defender_background_purple.src = 'choose_defender_background_purple.png';
+const choose_defender_background_pressed= new Image();
+choose_defender_background_pressed.src = 'choose_defender_background_pressed.png';
 const fire = new Image();
 fire.src = 'fire.png';
 const archer = new Image();
@@ -102,10 +104,10 @@ const ghost_attack = new Image();
 ghost_attack.src = 'ghost_attack.png';
 const ghost_rise_up = new Image();
 ghost_rise_up.src = 'ghost_rise_up.png';
-const start_button = new Image();
-start_button.src = 'start_button.png';
-const start_button_pressed = new Image();
-start_button_pressed.src = 'start_button_pressed.png';
+const start_button_img = new Image();
+start_button_img.src = 'start_button.png';
+const start_button_pressed_img = new Image();
+start_button_pressed_img.src = 'start_button_pressed.png';
 const black_spider = new Image();
 black_spider.src = 'black_spider.png';
 const ghost = new Image();
@@ -114,6 +116,20 @@ const pumpkinman = new Image();
 pumpkinman.src = 'pumpkinman.png';
 const skeleton = new Image();
 skeleton.src = 'skeleton.png';
+const startscreen_panel = new Image();
+startscreen_panel.src = 'startscreen_panel.png';
+const credits_button_pressed_img = new Image();
+credits_button_pressed_img.src = 'credits_button_pressed.png';
+const credits_button_img = new Image();
+credits_button_img.src = 'credits_button.png';
+const credits_panel = new Image();
+credits_panel.src = 'credits_panel.png';
+const close_button = new Image();
+close_button.src = 'close_button.png';
+const info_button_img = new Image();
+info_button_img.src = 'info.png';
+const info_button_pressed_img = new Image();
+info_button_pressed_img.src = 'info_pressed.png';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Global Variables
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -136,6 +152,7 @@ let gameover = false;
 let pause = false;
 let startscreen = true;
 let interLevel = false;
+let gaming = false;
 //////////////////////////////////////////////////////////////////////////////////////////
 //mouse
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -206,11 +223,11 @@ class Cell{
         this.height = cellSize;
     }
     draw(){
-        if(mouse.x && mouse.y && collision(this, mouse)){
-            ctx.strokeStyle = 'black';
-            ctx.strokeRect(this.x,this.y,this.width,this.height);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
-            ctx.fillRect(this.x, this.y,this.width,this.height)
+        if(mouse.x && mouse.y && collision(this, mouse) && defenderSlected != ''){
+            //ctx.strokeStyle = 'black';
+            //ctx.strokeRect(this.x,this.y,this.width,this.height);
+            //ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+            //ctx.fillRect(this.x, this.y,this.width,this.height)
         }
     }
 }
@@ -377,63 +394,65 @@ class Defender{
 }
 
 canvas.addEventListener('click', function(){
-    const gridPositionX = mouse.x - (mouse.x % cellSize) + cellGap;
-    const gridPositionY = mouse.y - (mouse.y % cellSize) + cellGap;
-    if(gridPositionY < cellSize) return;
-    for(let  i = 0;i < defenders.length;i++){
-        if(defenders[i].x === gridPositionX && defenders[i].y === gridPositionY) return;
-    }
-    if(defenderSlected=='jet_man'){
-        set_weapon.play();
-        if(money >= 50){
-            defenders.push(new Defender(gridPositionX, gridPositionY,20,0,20,jet_shoot_sound, 
-                jet_man, 18,0, 0,0,4,881,639, 6,354,215,50,
-                50,2,10,0,jet_man_bullet,8,5, -5, jet_hit_sound,false,false));
-                money -= 50;
-        }else{
-            floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+    if(gaming){
+        const gridPositionX = mouse.x - (mouse.x % cellSize) + cellGap;
+        const gridPositionY = mouse.y - (mouse.y % cellSize) + cellGap;
+        if(gridPositionY < cellSize) return;
+        for(let  i = 0;i < defenders.length;i++){
+            if(defenders[i].x === gridPositionX && defenders[i].y === gridPositionY) return;
         }
-    }else if(defenderSlected=='fan'){
-        set_weapon.play();
-        if(money >= 400){
-            defenders.push(new Defender(gridPositionX, gridPositionY,-20,0,10,0,fan,5,0,
-                0, 0, 6,1424,1221,15,0,0,0,0,0,0,0,0,0,0,0,0,true,false));
-                money -= 400;
-        }else{
-            floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+        if(defenderSlected=='jet_man'){
+            set_weapon.play();
+            if(money >= 50){
+                defenders.push(new Defender(gridPositionX, gridPositionY,20,0,20,jet_shoot_sound, 
+                    jet_man, 18,0, 0,0,4,881,639, 6,354,215,50,
+                    50,2,10,0,jet_man_bullet,8,5, -5, jet_hit_sound,false,false));
+                    money -= 50;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+            }
+        }else if(defenderSlected=='fan'){
+            set_weapon.play();
+            if(money >= 400){
+                defenders.push(new Defender(gridPositionX, gridPositionY,-20,0,10,0,fan,5,0,
+                    0, 0, 6,1424,1221,15,0,0,0,0,0,0,0,0,0,0,0,0,true,false));
+                    money -= 400;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+            }
+        }else if(defenderSlected=='cannon') {
+            set_weapon.play();
+            if(money >= 300){
+                defenders.push(new Defender(gridPositionX, gridPositionY, 10,0,30, cannon_shoot,
+                    red_cannon,25,0,0, 0, 6,290,234,
+                 2.5,675,512,50,50,1,50,5,fire_ball,10,5,5, cannon_hit,false,false));
+                 money -= 300;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+            }
         }
-    }else if(defenderSlected=='cannon') {
-        set_weapon.play();
-        if(money >= 300){
-            defenders.push(new Defender(gridPositionX, gridPositionY, 10,0,30, cannon_shoot,
-                red_cannon,25,0,0, 0, 6,290,234,
-             2.5,675,512,50,50,1,50,5,fire_ball,10,5,5, cannon_hit,false,false));
-             money -= 300;
-        }else{
-            floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+        else if(defenderSlected=='fire'){
+            set_weapon.play();
+            if(money >= 100){
+                defenders.push(new Defender(gridPositionX,gridPositionY,0,0,20,0, fire,
+                    5,0,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true))
+                    money -= 100;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+            }
+        }else if(defenderSlected=='archer'){
+            set_weapon.play();
+            if(money >= 100){
+                defenders.push(new Defender(gridPositionX,gridPositionY,30,10,20,arrow_shoot_sound,archer,10,0,23,24,
+                    29,777,627,6,577,100,50,50,2,10,0,arrow,10,5,-20,arrow_hit_sound,false,false))
+                    money -= 100;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+            }
         }
-    }
-    else if(defenderSlected=='fire'){
-        set_weapon.play();
-        if(money >= 100){
-            defenders.push(new Defender(gridPositionX,gridPositionY,0,0,20,0, fire,
-                5,0,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true))
-                money -= 100;
-        }else{
-            floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
+        else{
+            return;
         }
-    }else if(defenderSlected=='archer'){
-        set_weapon.play();
-        if(money >= 100){
-            defenders.push(new Defender(gridPositionX,gridPositionY,30,10,20,arrow_shoot_sound,archer,10,0,23,24,
-                29,777,627,6,577,100,50,50,2,10,0,arrow,10,5,-20,arrow_hit_sound,false,false))
-                money -= 100;
-        }else{
-            floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue'));
-        }
-    }
-    else{
-        return;
     }
 })
 function handleDefenders(){
@@ -448,9 +467,10 @@ function handleDefenders(){
         }
         for(let j = 0;j < enemies.length;j++){
 
-            if(defenders[i] && collision(defenders[i], enemies[j]) && !enemies[j].died){
+            if(defenders[i] && collision(defenders[i], enemies[j]) && 
+            !enemies[j].died){
                 eating.play();
-                enemies[j].frame = enemies[j].attackMinFrame;
+                if(enemies[j].movement != 0) enemies[j].frame = enemies[j].attackMinFrame;
                 enemies[j].minFrame = enemies[j].attackMinFrame;
                 enemies[j].maxFrame = enemies[j].attackMaxFrame;
                 enemies[j].movement = 0;
@@ -458,7 +478,7 @@ function handleDefenders(){
                 if(defenders[i].isFire){
                     enemies[j].health -= 0.2;
                 }
-            }else if(!enemies[j].died){
+            }else if(!enemies[j].died && enemies[j].movement == 0){
                 enemies[j].frame = enemies[j].moveMinFrame;
                 enemies[j].minFrame = enemies[j].moveMinFrame;
                 enemies[j].maxFrame = enemies[j].moveMaxFrame;
@@ -481,50 +501,89 @@ let cannon_back = choose_defender_background;
 let fire_back = choose_defender_background;
 let archer_back = choose_defender_background;
 canvas.addEventListener('click', function(){
-    if(mouse.x > 30 && mouse.x < 140 && mouse.y < 90){
-        set_weapon.play();
-        defenderSlected = 'jet_man';
-        jet_back = choose_defender_background_purple;
-        fan_back = choose_defender_background;
-        cannon_back = choose_defender_background;
-        fire_back = choose_defender_background;
-        archer_back = choose_defender_background;
-    }else if(mouse.x > 160 && mouse.x < 270 && mouse.y < 90 && level >= 2){
-        set_weapon.play();
-        defenderSlected = 'fan';
-        jet_back = choose_defender_background;
-        fan_back = choose_defender_background_purple;
-        cannon_back = choose_defender_background;
-        fire_back = choose_defender_background;
-        archer_back = choose_defender_background;
-    }else if(mouse.x > 280 && mouse.x < 380 && mouse.y < 90 && level >= 3){
-        set_weapon.play();
-        defenderSlected = 'cannon';
-        jet_back = choose_defender_background;
-        fan_back = choose_defender_background;
-        cannon_back = choose_defender_background_purple;
-        fire_back = choose_defender_background;
-        archer_back = choose_defender_background;
-    }else if(mouse.x > 390 && mouse.x < 490 && mouse.y < 90 && level >= 3){
-        set_weapon.play();
-        defenderSlected = 'fire';
-        jet_back = choose_defender_background;
-        fan_back = choose_defender_background;
-        cannon_back = choose_defender_background;
-        fire_back = choose_defender_background_purple;
-        archer_back = choose_defender_background;
-    }
-    else if(mouse.x > 500 && mouse.x < 600 && mouse.y < 90 && level >= 3){
-        set_weapon.play();
-        defenderSlected = 'archer';
-        jet_back = choose_defender_background;
-        fan_back = choose_defender_background;
-        cannon_back = choose_defender_background;
-        fire_back = choose_defender_background;
-        archer_back = choose_defender_background_purple;
+    if(gaming){
+        if(mouse.x > 30 && mouse.x < 140 && mouse.y < 90){
+            if(defenderSlected == 'jet_man'){
+                jet_back = choose_defender_background;
+                defenderSlected = '';
+            }else{
+                set_weapon.play();
+                defenderSlected = 'jet_man';
+                jet_back = choose_defender_background_pressed;
+                fan_back = choose_defender_background;
+                cannon_back = choose_defender_background;
+                fire_back = choose_defender_background;
+                archer_back = choose_defender_background;
+            }
+        }else if(mouse.x > 160 && mouse.x < 270 && mouse.y < 90 && level >= 2){
+            if(defenderSlected == 'fan'){
+                fan_back = choose_defender_background;
+                defenderSlected = '';
+            }else{
+                set_weapon.play();
+                defenderSlected = 'fan';
+                jet_back = choose_defender_background;
+                fan_back = choose_defender_background_pressed;
+                cannon_back = choose_defender_background;
+                fire_back = choose_defender_background;
+                archer_back = choose_defender_background;
+            }
+
+        }else if(mouse.x > 280 && mouse.x < 380 && mouse.y < 90 && level >= 3){
+            if(defenderSlected == 'cannon'){
+                cannon_back = choose_defender_background;
+                defenderSlected = '';
+            }else{
+                set_weapon.play();
+                defenderSlected = 'cannon';
+                jet_back = choose_defender_background;
+                fan_back = choose_defender_background;
+                cannon_back = choose_defender_background_pressed;
+                fire_back = choose_defender_background;
+                archer_back = choose_defender_background;
+            }
+        }else if(mouse.x > 390 && mouse.x < 490 && mouse.y < 90 && level >= 3){
+            if(defenderSlected == 'fire'){
+                fire_back = choose_defender_background;
+                defenderSlected = '';
+            }else{
+                set_weapon.play();
+                defenderSlected = 'fire';
+                jet_back = choose_defender_background;
+                fan_back = choose_defender_background;
+                cannon_back = choose_defender_background;
+                fire_back = choose_defender_background_pressed;
+                archer_back = choose_defender_background;
+            }
+        }
+        else if(mouse.x > 500 && mouse.x < 600 && mouse.y < 90 && level >= 3){
+            if(defenderSlected == 'archer'){
+                archer_back = choose_defender_background;
+                defenderSlected = '';
+            }else{
+                set_weapon.play();
+                defenderSlected = 'archer';
+                jet_back = choose_defender_background;
+                fan_back = choose_defender_background;
+                cannon_back = choose_defender_background;
+                fire_back = choose_defender_background;
+                archer_back = choose_defender_background_pressed;
+            }
+        }
     }
 });
 function handleChooseDefender(){
+    if(defenderSlected == 'jet_man'){
+        ctx.drawImage(jet_man, 0,0,881,639, mouse.x-63,mouse.y-46,881/7, 639/7);
+    }else if(defenderSlected == 'fan'){
+        ctx.drawImage(fan, 0,0,1424,1221, mouse.x-36,mouse.y-31,1424/20, 1221/20);
+    }else if(defenderSlected == 'cannon'){
+        ctx.drawImage(red_cannon, 0,0, 290, 234, mouse.x-48,mouse.y-39,290/3, 234/3);
+    }else if(defenderSlected == 'fire'){
+        ctx.drawImage(fire, 0,0, 1034, 1034,mouse.x-34,mouse.y-34,1034/15, 1034/15);
+    }else if(defenderSlected == 'archer'){
+        ctx.drawImage(archer, 0,0, 777, 627, mouse.x-55,mouse.y-45,777/7, 627/7);
+    }
     ctx.drawImage(jet_back,30,5,100,90)
     ctx.drawImage(jet_man, 0,0,881,639, 20,10,881/7, 639/7);
     if(level >= 2){
@@ -587,6 +646,8 @@ class Enemy{
     update(){
         //console.log("min" + this.minFrame)
         //console.log("max" + this.maxFrame)
+        //console.log(this.frame)
+        //console.log("frame rate" + this.frameRate)
         this.x -= this.movement;
         if(frame % this.frameRate === 0){
             this.frame++;
@@ -602,7 +663,6 @@ class Enemy{
     draw(){
         //ctx.fillStyle = 'green';
         //ctx.fillRect(this.x,this.y,this.width, this.height);
-        console.log(this.frame)
         ctx.drawImage(this.spriteSheet, this.frame * this.spriteWidth, 0
             , this.spriteWidth, this.spriteHeight, this.x-this.Xoffset, this.y-this.Yoffset,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
@@ -625,6 +685,7 @@ function handleEnemy(){
             i--;
         }
         if (enemies[i] && enemies[i].x < -enemies[i].width){
+            gaming = false;
             gameover = true;
             gameover_sound.play();
         }
@@ -645,10 +706,10 @@ function handleEnemy(){
                     affectedByFan = true;
             }
         }
-        if(enemies[i]  && affectedByFan && !enemies[i].died) {
+        if(enemies[i]  && affectedByFan && !enemies[i].died && enemies[i].movement != 0) {
             enemies[i].movement = enemies[i].fanspeed;
         }
-        else if(enemies[i] && !enemies[i].died){
+        else if(enemies[i] && !enemies[i].died && enemies[i].movement != 0){
             enemies[i].movement = enemies[i].speed;
         }
     }
@@ -661,8 +722,8 @@ function handleEnemy(){
         //addEnemy(250, 830, 510, black_spider, 5, 6, 0.5, 50, 0, 20, 30,23, 0,6,7,22,23);
         //addEnemy(100,768,911,ghost,5,7,0.5,50,30,10,38,27,0,9,10,21,22);
         //addEnemy(400, 703,851, pumpkinman, 5,7,0.5,50,25,0,24,17,25,36,0,16,17)
-        addEnemy(300, 416,582,skeleton,5,5,0.5,50,5,-20,60,45,35,44,0,18,35)
-        addEnemy(300, 416,582,skeleton,5,5,0.5,50,5,-20,34,19,35,44,0,18,19)
+        addEnemy(1000, 416,582,skeleton,5,5,0.5,50,5,-20,60,45,35,44,0,18,35)
+        //addEnemy(300, 416,582,skeleton,5,5,0.5,50,5,-20,34,19,35,44,0,18,19)
     }else if(level == 4){
         addEnemy(500, 820, 500, 7, black_spider_walk, 5, 6, 0.5, 50, black_spider_bite, 6, 0, 20);
         addEnemy(200, 406, 572, 15, skeleton_walk, 5, 5, 0.2, 50,skeleton_throw_bone,9,5, -20);
@@ -760,20 +821,25 @@ function handleResources(){
 // utilities
 //////////////////////////////////////////////////////////////////////////////////////////
 function handleGameStatus(){
-    ctx.drawImage(choose_defender_background_purple, canvas.width-200,canvas.height-50,200, 50);
-    ctx.fillStyle = 'white';
+    ctx.drawImage(choose_defender_background, canvas.width-200,canvas.height-50,200, 50);
+    ctx.fillStyle = 'gray';
     ctx.font = 'bold 20px Cursive';
-    ctx.fillText("$:" + money, 720, 580);
-    ctx.fillText("Level:" + level, 800, 580);
+    ctx.fillText("$:" + money, 730, 580);
+    ctx.fillText("Level:" + level, 810, 580);
     if(score >= winningScore && enemies.length === 0){
+        gaming = false;
         interLevel = true;
         interlevel_sound.play();
     }
 }
 canvas.addEventListener('click', function(){
     if(mouse.x > 800 && mouse.x < 870 && mouse.y < 80 && pause == false){
+        button_press_sound.play()
+        gaming = false;
         pause = true;
     }else if(mouse.x > 800 && mouse.x < 870 && mouse.y < 80 && pause == true){
+        button_press_sound.play()
+        gaming = true;
         pause = false;
     }
 })
@@ -784,73 +850,79 @@ let ghost_rise = {
     frame: 20,
     maxFrame: 24,
 }
-let mousedown = false;
+let start_screen_fire = {
+    frame: 0,
+    maxFrame: 5
+}
+let start_button_pressed = false;
+let credits_button_pressed = false;
+let show_credits_panel = false;
+let info_button_img_pressed = false;
 
 addEventListener('mousedown',function(e){
-    if(mouse.x < 342 && mouse.x > 150 && mouse.y > 100 && mouse.y < 196){
-        console.log('sdsd')
-        mousedown = true;
+    if(mouse.x < 342 && mouse.x > 150 && mouse.y > 200 && mouse.y < 296){
+        button_press_sound.play()
+        start_button_pressed = true;
+    }else if(mouse.x < 342 && mouse.x > 150 && mouse.y > 300 && mouse.y < 396){
+        credits_button_pressed = true;
+        show_credits_panel = true;
+    }else if(mouse.x < 590 && mouse.x > 540 && mouse.y > 120 && mouse.y < 170 && show_credits_panel){
+        show_credits_panel = false;
+    }else if(mouse.x > 260 && mouse.x < 310 && mouse.y > 390 && mouse.y < 460){
+        info_button_img_pressed = true;
     }
 })
 addEventListener('mouseup',function(e){
-    mousedown = false;
-})
-addEventListener('keypress',function(e){
-    if(e.code == "Space" && startscreen == true){
+    if(mouse.x < 342 && mouse.x > 150 && mouse.y > 200 && mouse.y < 296){
+        gaming = true;
         startscreen = false;
         startscreen_music.pause();
-    }else if(e.key == "d" && startscreen == true){
-        frame = 800;
+    }else if(mouse.x < 342 && mouse.x > 150 && mouse.y > 300 && mouse.y < 396){
+        
     }
+    start_button_pressed = false;
+    credits_button_pressed = false;
+    info_button_img_pressed = false;
 })
 function handleStartScreen(){
-    if(frame < 800){
+    startscreen_music.play();
+    ctx.drawImage(startscreen_background, 0,0,canvas.width,canvas.height)
+    if(frame > 50){
+        ctx.drawImage(startscreen_dialog, 465,225,150,105)
+        ctx.drawImage(connector, 610,250,30,20)
         ctx.fillStyle = 'black';
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 20px Cursive';
-        ctx.fillText("    Very very far away, there is a villige in the forest called Modvo ", 100, 160); 
-        ctx.fillText("There is a curse on this villiage, that every 10 years on Holloween", 100, 190); 
-        ctx.fillText("The evil creatures will arise from the dark of the woods and march", 100, 220); 
-        ctx.fillText("to the villiage. And they have just arrived. Accorind to the prophecy.", 100, 250); 
-        ctx.fillText("The will a young to save the villiage and the people...", 100, 280); 
-        ctx.fillText("Are you the one we are looking for?", 100, 360); 
-        ctx.fillText("Press d to skip", 350, 20); 
-    }
-    else{
-        startscreen_music.play();
-        ctx.drawImage(startscreen_background, 0,0,canvas.width,canvas.height)
-        if(frame > 900){
-            ctx.drawImage(startscreen_dialog, 445,275,150,105)
-            ctx.drawImage(connector, 590,300,30,20)
-            ctx.fillStyle = 'black';
-            ctx.font = 'bold 15px Cursive';
-            ctx.fillText("We assembled ", 460, 300); 
-            ctx.fillText("the evil army", 460, 320); 
-            ctx.fillText(", we'll destroy", 460, 340); 
-            ctx.fillText("your villiage.", 460, 360); 
-        }
-        let startButtonImg = (mousedown) ? start_button_pressed : start_button;
-        ctx.drawImage(startButtonImg, 150,100,192,96)
-        ctx.fillStyle = 'black';
-        ctx.font = 'bold 45px Cursive';
-        ctx.fillText("START", 170, 160); 
-        ctx.drawImage(startButtonImg, 150,220,192,96)
-        ctx.fillStyle = 'white';
         ctx.font = 'bold 15px Cursive';
-        ctx.fillText("Press SPACE to start game", 330, 20); 
-        if(frame % 20 === 0){
-            if(ghost_rise.frame == 12){
-                evil_laugh.play();
-            }
-            ghost_rise.frame++;
-            if(ghost_rise.frame >= ghost_rise.maxFrame) {
-                ghost_rise.frame = 0;
-                ghost_rise.maxFrame = 19;
-            }
-        }
-        ctx.drawImage(ghost_rise_up, ghost_rise.frame*768, 0, 768,911,canvas.width-350,100,768/2,911/2);
+        ctx.fillText("We assembled ", 485, 250); 
+        ctx.fillText("the evil army", 485, 270); 
+        ctx.fillText(", we'll destroy", 485, 290); 
+        ctx.fillText("your villiage.", 485, 310); 
     }
+    ctx.drawImage(startscreen_panel, 100,100,1182/4,1650/4)
+    ctx.drawImage(pumpkin, 10,350,517/2,517/2)
+    let startButtonImg = (start_button_pressed) ? start_button_pressed_img : start_button_img;
+    let creditsButtonImg = (credits_button_pressed) ? credits_button_pressed_img : credits_button_img;
+    let infoButtonImg = (info_button_img_pressed) ? info_button_pressed_img : info_button_img;
+    ctx.drawImage(startButtonImg, 155,200,180,85)
+    ctx.drawImage(creditsButtonImg, 155,295,180,85)
+    ctx.drawImage(infoButtonImg, 260,390,70,70)
+    if(show_credits_panel) ctx.drawImage(credits_panel, 290, 60,360,480)
+    if(show_credits_panel) ctx.drawImage(close_button, 540, 120,50,50)
+    if(frame % 20 === 0){
+        if(ghost_rise.frame == 12){
+            evil_laugh.play();
+        }
+        ghost_rise.frame++;
+        start_screen_fire.frame++;
+        if(ghost_rise.frame >= ghost_rise.maxFrame) {
+            ghost_rise.frame = 0;
+            ghost_rise.maxFrame = 19;
+        }
+        if(start_screen_fire.frame >= start_screen_fire.maxFrame) {
+            start_screen_fire.frame = 0;
+        }
+    }
+    ctx.drawImage(ghost_rise_up, ghost_rise.frame*768, 0, 768,911,canvas.width-350,100,768/2,911/2);
+    ctx.drawImage(fire, start_screen_fire.frame*1034, 0, 1034,1034,350,400,1034/6,1034/6);
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 // Restart
@@ -858,6 +930,7 @@ function handleStartScreen(){
 addEventListener('keypress',function(e){
     if(e.code == "Space" && gameover == true){
         gameover = false;
+        gaming = true;
         level = 1;
         money = 300;
         score = 0;
@@ -885,6 +958,7 @@ addEventListener('keypress',function(e){
     if(e.code == "Space" && interLevel == true && level != 10){
         floatingMessages.push(new FloatingMessages('LEVEL UP',720,550,30,'gold'));
         interLevel = false;
+        gaming = true;
         score = 0;
         numberResources = 300;
         defenders.splice(0,defenders.length);
@@ -934,7 +1008,7 @@ function handleInterLevel(level){
 //////////////////////////////////////////////////////////////////////////////////////////
 function animate(){
     background_music.play();
-    if(!pause && !gameover && !startscreen && !interLevel){
+    if(gaming){
         ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.drawImage(background, 0,0,canvas.width, canvas.height);
         ctx.drawImage(pause_img, 800,10,70, 70);
