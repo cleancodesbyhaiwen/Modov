@@ -5,8 +5,8 @@ canvas.height = 600;
 //////////////////////////////////////////////////////////////////////////////////////////
 // Sound effects
 //////////////////////////////////////////////////////////////////////////////////////////
-const coin_sound = document.createElement('audio');
-coin_sound.src = 'coinsplash.wav';
+const pumpkin_collect_sound = document.createElement('audio');
+pumpkin_collect_sound.src = 'pumpkin_collect_sound.mp3';
 const cannon_hit = document.createElement('audio');
 cannon_hit.src = 'cannon_hit.mp3';
 const gameover_sound = document.createElement('audio');
@@ -37,6 +37,12 @@ const game_finish_music = document.createElement('audio');
 game_finish_music.src = 'game_finish_music.mp3';
 const button_press_sound = document.createElement('audio');
 button_press_sound.src = 'button_press_sound.flac';
+const fire_sound = document.createElement('audio');
+fire_sound.src = 'fire_sound.mp3';
+const hurt_sound = document.createElement('audio');
+hurt_sound.src = 'hurt_sound.mp3';
+const owl_sound = document.createElement('audio');
+owl_sound.src = 'owl_sound.mp3';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Sprite Sheets
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -114,12 +120,42 @@ const return_startscreen = new Image();
 return_startscreen.src = 'return_startscreen.png';
 const return_startscreen_pressed = new Image();
 return_startscreen_pressed.src = 'return_startscreen_pressed.png';
-const coin = new Image();
-coin.src = 'coin.png';
 const interlevel_panel = new Image();
 interlevel_panel.src = 'interlevel_panel.png';
 const thank_letter = new Image();
 thank_letter.src = 'thank_letter.png';
+const health_bar = new Image();
+health_bar.src = 'health_bar.png';
+const enemy_health_bar = new Image();
+enemy_health_bar.src = 'enemy_health_bar.png';
+const floor_trap = new Image();
+floor_trap.src = 'floor_trap.png';
+const owl_img = new Image();
+owl_img.src = 'owl.png';
+const pumpkin2 = new Image();
+pumpkin2.src = 'pumpkin2.png';
+const pumpkin2_light = new Image();
+pumpkin2_light.src = 'pumpkin2_light.png';
+const startscreen_pumpkinman = new Image();
+startscreen_pumpkinman.src = 'startscreen_pumpkinman.png';
+const lattern_img = new Image();
+lattern_img.src = 'lattern.png';
+const pole = new Image();
+pole.src = 'pole.png';
+const trolley_button_img = new Image();
+trolley_button_img.src = 'trolley_button.png';
+const list_button_img = new Image();
+list_button_img.src = 'list_button.png';
+const trolley_button_pressed_img = new Image();
+trolley_button_pressed_img.src = 'trolley_button_pressed.png';
+const list_button_pressed_img = new Image();
+list_button_pressed_img.src = 'list_button_pressed.png';
+const choose_level_panel = new Image();
+choose_level_panel.src = 'choose_level_panel.png';
+const right_arrow = new Image();
+right_arrow.src = 'right_arrow.png';
+const shop_panel = new Image();
+shop_panel.src = 'shop_panel.png';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Global Variables
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -132,17 +168,24 @@ const enemiesPositions = [];
 const projectiles = [];
 const resources = [];
 const floatingMessages = []
+let level = 1;
+let chosen_level = 1;
 var money = 150;
 var score = 0;
+let feather = 0;
 let frame = 0;
 const winningScore = 100;
-let level = 3;
 let defenderSlected = "";
 let gameover = false;
 let pause = false;
 let startscreen = true;
 let interLevel = false;
 let gaming = false;
+let own_fan = false;
+let own_archer = false;
+let own_cannon = false;
+let own_fire = false;
+let own_floor_trap = false;
 //////////////////////////////////////////////////////////////////////////////////////////
 //mouse
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +229,7 @@ class FloatingMessages{
         ctx.font = 'bold ' + this.size + 'px Georgia';
         ctx.fillText(this.value, this.x, this.y);
         ctx.globalAlpha = 1;
-        if(this.isMakeMoney) ctx.drawImage(coin, this.x-30,this.y-20,30, 30);
+        if(this.isMakeMoney) ctx.drawImage(pumpkin, this.x-30,this.y-20,30, 30);
     }
 }
 function handleFloatingMessages(){
@@ -199,7 +242,6 @@ function handleFloatingMessages(){
         }
     }
 }
-
 //////////////////////////////////////////////////////////////////////////////////////////
 // Game board
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -240,7 +282,6 @@ function handleGameGrid(){
 //////////////////////////////////////////////////////////////////////////////////////////
 // Projectile
 //////////////////////////////////////////////////////////////////////////////////////////
-
 class Projectile{
     constructor(x,y,width, height, spriteWidth,spriteHeight, 
         maxFrame,spriteSheet, frameRate, speed,power, sizeFactor, Yoffset, hit_sound){
@@ -275,12 +316,10 @@ class Projectile{
             this.spriteHeight/this.sizeFactor);
     }
 }
-
 function handleProjectiles(){
     for(let i = 0;i < projectiles.length;i++){
         projectiles[i].update();
         projectiles[i].draw();
-
         for(let j = 0;j < enemies.length;j++){
             if(enemies[j] && projectiles[i] && collision(projectiles[i], enemies[j]) && !enemies[j].died){
                 projectiles[i].hit_sound.play();
@@ -303,7 +342,7 @@ class Defender{
         shootMinFrame, shootMaxFrame, spriteWidth, spriteHeight,sizeFactor, 
         projectileSpriteWidth,projectileSpriteHeight,projectileWidth,
         projectileHeight, projectileSpeed, projectilePower, projectileMaxFrame, projectileSpriteSheet,
-        projectileSizeFactor, projectileFrameRate,projectileYoffset,projectileHit_sound, isFan, isFire){
+        projectileSizeFactor, projectileFrameRate,projectileYoffset,projectileHit_sound, isFan, isFire,isFloorTrap){
         this.x = x,
         this.y = y,
         this.frame = 0;
@@ -314,7 +353,7 @@ class Defender{
         this.spriteSheet = spriteSheet;
         this.minFrame = 0;
         this.maxFrame = this.idleMaxFrame;
-        this.dileMinFrame = idleMinFrame;
+        this.idleMinFrame = idleMinFrame;
         this.idleMaxFrame = idleMaxFrame;
         this.shootMinFrame = shootMinFrame;
         this.shootMaxFrame = shootMaxFrame;
@@ -327,10 +366,10 @@ class Defender{
         this.health = health;
         this.maxHealth = health;
         this.projectile = [];
-        this.timer = 0;
         this.isFan = isFan;
         this.isFire = isFire;
         this.shootNow = false;
+        this.isFloorTrap = isFloorTrap;
         this.projectile = {
             spriteWidth: projectileSpriteWidth,
             spriteHeight: projectileSpriteHeight,
@@ -353,17 +392,15 @@ class Defender{
             , this.spriteWidth, this.spriteHeight, this.x-this.XOffset, 
             this.y-this.YOffset,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
-        ctx.fillStyle = 'gold';
-        ctx.fillRect(this.x+20, this.y, 60*(this.health/this.maxHealth), 7);
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x+60*(this.health/this.maxHealth)+20, this.y, 60-60*(this.health/this.maxHealth), 7);
+        ctx.drawImage(health_bar,this.x+20, this.y, 60, 13);
+        ctx.fillStyle = 'rgba(148,41,41,255)';
+        ctx.fillRect(this.x+25, this.y+4, 50*(this.health/this.maxHealth), 5);
     }
     update(){
-        if(this.shooting ){
+        if(this.shooting){
             this.minFrame = this.shootMinFrame;
             this.maxFrame = this.shootMaxFrame;
-            this.timer++;
-            if(!this.isFan && this.shootNow == true && !this.isFire){
+            if(!this.isFan && this.shootNow == true && !this.isFire && !this.isFloorTrap){
                 this.shoot_sound.play();
                 projectiles.push(new Projectile(this.x + cellSize, this.y+cellSize/2-this.projectile.height/2,
                 this.projectile.width,this.projectile.height,this.projectile.spriteWidth,this.projectile.spriteHeight,
@@ -373,8 +410,7 @@ class Defender{
             }
         }else{
             this.maxFrame = this.idleMaxFrame;
-            this.minFrame = this.dileMinFrame;
-            this.timer = 0;
+            this.minFrame = this.idleMinFrame;
         }
         if(frame % this.frameRate === 0){
             this.frame++;
@@ -385,7 +421,6 @@ class Defender{
         }
     }
 }
-
 canvas.addEventListener('click', function(){
     if(gaming){
         const gridPositionX = mouse.x - (mouse.x % cellSize) + cellGap;
@@ -399,8 +434,9 @@ canvas.addEventListener('click', function(){
             if(money >= 50){
                 defenders.push(new Defender(gridPositionX, gridPositionY,20,0,20,jet_shoot_sound, 
                     jet_man, 18,0, 0,0,4,881,639, 6,354,215,50,
-                    50,2,10,0,jet_man_bullet,8,5, -5, jet_hit_sound,false,false));
+                    50,2,10,0,jet_man_bullet,8,5, -5, jet_hit_sound,false,false,false));
                     money -= 50;
+                
             }else{
                 floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
             }
@@ -408,7 +444,7 @@ canvas.addEventListener('click', function(){
             set_weapon.play();
             if(money >= 400){
                 defenders.push(new Defender(gridPositionX, gridPositionY,-20,-5,10,0,fan,5,0,
-                    0, 0, 6,1424,1221,15,0,0,0,0,0,0,0,0,0,0,0,0,true,false));
+                    0, 0, 6,1424,1221,15,0,0,0,0,0,0,0,0,0,0,0,0,true,false,false));
                     money -= 400;
             }else{
                 floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
@@ -418,7 +454,7 @@ canvas.addEventListener('click', function(){
             if(money >= 200){
                 defenders.push(new Defender(gridPositionX, gridPositionY, 10,0,30, cannon_shoot,
                     red_cannon,25,0,0, 0, 6,290,234,
-                 2.5,675,512,50,50,1,50,5,fire_ball,10,5,10, cannon_hit,false,false));
+                 2.5,675,512,50,50,1,50,5,fire_ball,10,5,10, cannon_hit,false,false,false));
                  money -= 200;
             }else{
                 floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
@@ -428,7 +464,7 @@ canvas.addEventListener('click', function(){
             set_weapon.play();
             if(money >= 25){
                 defenders.push(new Defender(gridPositionX,gridPositionY,5,5,20,0, fire,
-                    5,0,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true))
+                    5,0,5,0,5,1034,1034,10,0,0,0,0,0,0,0,0,0,0,0,0,false, true,false))
                     money -= 25;
             }else{
                 floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
@@ -437,8 +473,19 @@ canvas.addEventListener('click', function(){
             set_weapon.play();
             if(money >= 100){
                 defenders.push(new Defender(gridPositionX,gridPositionY,30,10,20,arrow_shoot_sound,archer,10,0,23,24,
-                    29,777,627,6,577,100,50,50,2,10,0,arrow,10,5,-12,arrow_hit_sound,false,false))
+                    29,777,627,6,577,100,50,50,2,10,0,arrow,10,5,-12,arrow_hit_sound,false,false,false))
                     money -= 100;
+            }else{
+                floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
+            }
+        }
+        else if(defenderSlected=='floor_trap'){
+            set_weapon.play();
+            if(money >= 200){
+                defenders.push(new Defender(gridPositionX, gridPositionY,0,-40,100,undefined,floor_trap,
+                    5,0,5,0,5,284,154,3,undefined,undefined,undefined,undefined,undefined,undefined,
+                    undefined,undefined,undefined,undefined,undefined,undefined,false,false, true));
+                    money -= 200;
             }else{
                 floatingMessages.push(new FloatingMessages('Not Enough Money',mouse.x,mouse.y,20,'blue',false));
             }
@@ -447,127 +494,72 @@ canvas.addEventListener('click', function(){
             return;
         }
         defenderSlected = '';
-        jet_back = choose_defender_background;
-        fan_back = choose_defender_background;
-        cannon_back = choose_defender_background;
-        fire_back = choose_defender_background;
-        archer_back = choose_defender_background;
+        set_background('')
     }
 })
 function handleDefenders(){
     for(let i = 0;i < defenders.length;i++){
         defenders[i].draw();
         defenders[i].update();
-        if(enemiesPositions.indexOf(defenders[i].y) !== -1){
-            defenders[i].shooting = true;
-        }
-        else{
-            defenders[i].shooting = false;
-        }
-        for(let j = 0;j < enemies.length;j++){
-
-            if(defenders[i] && collision(defenders[i], enemies[j]) && 
-            !enemies[j].died){
-                eating.play();
-                if(enemies[j].movement != 0) enemies[j].frame = enemies[j].attackMinFrame;
-                enemies[j].minFrame = enemies[j].attackMinFrame;
-                enemies[j].maxFrame = enemies[j].attackMaxFrame;
-                enemies[j].movement = 0;
-                defenders[i].health -= 0.2;
-                if(defenders[i].isFire){
-                    enemies[j].health -= 0.2;
-                }
-            }else if(!enemies[j].died && enemies[j].movement == 0){
-                enemies[j].frame = enemies[j].moveMinFrame;
-                enemies[j].minFrame = enemies[j].moveMinFrame;
-                enemies[j].maxFrame = enemies[j].moveMaxFrame;
-                enemies[j].movement = enemies[j].speed;
-            }
-            if(defenders[i] && defenders[i].health <= 0 && !enemies[j].died){
-                defenders.splice(i,1);
-                i--;
-                enemies[j].movement = enemies[j].speed;
-                enemies[j].frame = enemies[j].moveMinFrame;
-                enemies[j].minFrame = enemies[j].moveMinFrame;
-                enemies[j].maxFrame = enemies[j].moveMaxFrame;
-            }
+        defenders[i].shooting = (enemiesPositions.indexOf(defenders[i].y) !== -1) ? true : false;
+        if(defenders[i] && defenders[i].health <= 0){
+            defenders.splice(i,1);
+            i--;
         }
     }
 }
-let jet_back = choose_defender_background;
-let fan_back= choose_defender_background;
-let cannon_back = choose_defender_background;
-let fire_back = choose_defender_background;
-let archer_back = choose_defender_background;
-canvas.addEventListener('click', function(){
+const defenderName_defenderBackgound = new Map([
+    ['jet_man', 'jet_back'],
+    ['fan', 'fan_back'],
+    ['cannon', 'cannon_back'],
+    ['fire', 'fire_back'],
+    ['archer', 'archer_back'],
+    ['floor_trap', 'floor_trap_back'],
+  ]);
+let choose_defender_background_map = new Map();
+choose_defender_background_map.set('jet_back', choose_defender_background)
+choose_defender_background_map.set('fan_back', choose_defender_background)
+choose_defender_background_map.set('cannon_back', choose_defender_background)
+choose_defender_background_map.set('fire_back', choose_defender_background)
+choose_defender_background_map.set('archer_back', choose_defender_background)
+choose_defender_background_map.set('floor_trap_back', choose_defender_background)
+
+function set_background(selected){
+    choose_defender_background_map.forEach((value,key) => {
+        if(key == selected){
+            choose_defender_background_map.set(key, choose_defender_background_pressed);
+        }else{
+            choose_defender_background_map.set(key, choose_defender_background);
+        }
+      });
+}
+function choosing(clicked){
+    if(clicked == defenderSlected){
+        choose_defender_background_map.set(defenderName_defenderBackgound.get(clicked), 
+        choose_defender_background);
+        defenderSlected = '';
+    }else{
+        set_weapon.play();
+        defenderSlected = clicked;
+        set_background(defenderName_defenderBackgound.get(clicked));
+    }
+}
+canvas.addEventListener('click', function(e){
     if(gaming){
         if(mouse.x > 30 && mouse.x < 140 && mouse.y < 90){
-            if(defenderSlected == 'jet_man'){
-                jet_back = choose_defender_background;
-                defenderSlected = '';
-            }else{
-                set_weapon.play();
-                defenderSlected = 'jet_man';
-                jet_back = choose_defender_background_pressed;
-                fan_back = choose_defender_background;
-                cannon_back = choose_defender_background;
-                fire_back = choose_defender_background;
-                archer_back = choose_defender_background;
-            }
-        }else if(mouse.x > 160 && mouse.x < 270 && mouse.y < 90 && level >= 3){
-            if(defenderSlected == 'fan'){
-                fan_back = choose_defender_background;
-                defenderSlected = '';
-            }else{
-                set_weapon.play();
-                defenderSlected = 'fan';
-                jet_back = choose_defender_background;
-                fan_back = choose_defender_background_pressed;
-                cannon_back = choose_defender_background;
-                fire_back = choose_defender_background;
-                archer_back = choose_defender_background;
-            }
+            choosing('jet_man')
+        }else if(mouse.x > 160 && mouse.x < 270 && mouse.y < 90 && own_fan){
+            choosing('fan')
 
-        }else if(mouse.x > 280 && mouse.x < 380 && mouse.y < 90 && level >= 4){
-            if(defenderSlected == 'cannon'){
-                cannon_back = choose_defender_background;
-                defenderSlected = '';
-            }else{
-                set_weapon.play();
-                defenderSlected = 'cannon';
-                jet_back = choose_defender_background;
-                fan_back = choose_defender_background;
-                cannon_back = choose_defender_background_pressed;
-                fire_back = choose_defender_background;
-                archer_back = choose_defender_background;
-            }
-        }else if(mouse.x > 390 && mouse.x < 490 && mouse.y < 90 && level >= 5){
-            if(defenderSlected == 'fire'){
-                fire_back = choose_defender_background;
-                defenderSlected = '';
-            }else{
-                set_weapon.play();
-                defenderSlected = 'fire';
-                jet_back = choose_defender_background;
-                fan_back = choose_defender_background;
-                cannon_back = choose_defender_background;
-                fire_back = choose_defender_background_pressed;
-                archer_back = choose_defender_background;
-            }
+        }else if(mouse.x > 280 && mouse.x < 380 && mouse.y < 90 && own_cannon){
+            choosing('cannon')
+        }else if(mouse.x > 390 && mouse.x < 490 && mouse.y < 90 && own_fire){
+            choosing('fire')
         }
-        else if(mouse.x > 500 && mouse.x < 600 && mouse.y < 90 && level >= 6){
-            if(defenderSlected == 'archer'){
-                archer_back = choose_defender_background;
-                defenderSlected = '';
-            }else{
-                set_weapon.play();
-                defenderSlected = 'archer';
-                jet_back = choose_defender_background;
-                fan_back = choose_defender_background;
-                cannon_back = choose_defender_background;
-                fire_back = choose_defender_background;
-                archer_back = choose_defender_background_pressed;
-            }
+        else if(mouse.x > 500 && mouse.x < 600 && mouse.y < 90 && own_archer){
+            choosing('archer')
+        }else if(mouse.x > 610 && mouse.x < 710 && mouse.y < 90 && own_floor_trap){
+            choosing('floor_trap')
         }
     }
 });
@@ -582,24 +574,30 @@ function handleChooseDefender(){
         ctx.drawImage(fire, 0,0, 1034, 1034,mouse.x-34,mouse.y-34,1034/15, 1034/15);
     }else if(defenderSlected == 'archer'){
         ctx.drawImage(archer, 0,0, 777, 627, mouse.x-55,mouse.y-45,777/7, 627/7);
+    }else if(defenderSlected == 'floor_trap'){
+        ctx.drawImage(floor_trap, 0,0, 284, 154, mouse.x-35,mouse.y-30,284/4, 154/4);
     }
-    ctx.drawImage(jet_back,30,5,100,90)
+    ctx.drawImage(choose_defender_background_map.get('jet_back'),30,5,100,90)
     ctx.drawImage(jet_man, 0,0,881,639, 20,10,881/7, 639/7);
-    if(level >= 3){
-        ctx.drawImage(fan_back,150,5,100,90)
+    if(own_fan){
+        ctx.drawImage(choose_defender_background_map.get('fan_back'),150,5,100,90)
         ctx.drawImage(fan, 0,0,1424,1221, 175,20,1424/20, 1221/20);
     }
-    if(level >= 4){
-        ctx.drawImage(cannon_back,270,5,100,90)
+    if(own_cannon){
+        ctx.drawImage(choose_defender_background_map.get('cannon_back'),270,5,100,90)
         ctx.drawImage(red_cannon, 0,0, 290, 234, 270,10,290/3, 234/3);
     }
-    if(level >= 5){
-        ctx.drawImage(fire_back,390,5,100,90)
+    if(own_fire){
+        ctx.drawImage(choose_defender_background_map.get('fire_back'),390,5,100,90)
         ctx.drawImage(fire, 0,0, 1034, 1034,405,10,1034/15, 1034/15);
     }
-    if(level >= 6){
-        ctx.drawImage(archer_back,500,5,100,90)
+    if(own_archer){
+        ctx.drawImage(choose_defender_background_map.get('archer_back'),500,5,100,90)
         ctx.drawImage(archer, 0,0, 777, 627, 485,5,777/7, 627/7);
+    }
+    if(own_floor_trap){
+        ctx.drawImage(choose_defender_background_map.get('floor_trap_back'),610,5,100,90)
+        ctx.drawImage(floor_trap, 0,0,284,154, 625,30,284/4, 154/4);
     }
 }
 
@@ -641,6 +639,7 @@ class Enemy{
         this.Xoffset = Xoffset;
         this.died = false;
         this.remove = false;
+        this.colliding = false;
     }
     update(){
         //console.log("min" + this.minFrame)
@@ -666,10 +665,9 @@ class Enemy{
             , this.spriteWidth, this.spriteHeight, this.x-this.Xoffset, this.y-this.Yoffset,this.spriteWidth/this.sizeFactor, 
             this.spriteHeight/this.sizeFactor);
         if(!this.died){
-            ctx.fillStyle = 'green';
-            ctx.fillRect(this.x+20, this.y, 60*(this.health/this.maxHealth), 7);
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x+20+60*(this.health/this.maxHealth), this.y, 60-60*(this.health/this.maxHealth), 7);
+            ctx.drawImage(enemy_health_bar,this.x+20, this.y, 60, 13);
+            ctx.fillStyle = 'rgba(194,38,234,255)';
+            ctx.fillRect(this.x+25, this.y+4, 50*(this.health/this.maxHealth), 5);
         }
     }
 }
@@ -682,11 +680,13 @@ function handleEnemy(){
             enemies.splice(i,1);
             enemiesPositions.splice(findthisIndex,1);
             i--;
+            continue;
         }
         if (enemies[i] && enemies[i].x < -enemies[i].width){
             gaming = false;
             gameover = true;
             gameover_sound.play();
+            break;
         }
         if(enemies[i] && enemies[i].health <= 0 && !enemies[i].died){
             enemies[i].movement = 0;
@@ -694,56 +694,81 @@ function handleEnemy(){
             enemies[i].minFrame = enemies[i].dieMinFrame;
             enemies[i].maxFrame = enemies[i].dieMaxFrame;
             let gainedResources = enemies[i].maxHealth / 2; 
-            floatingMessages.push(new FloatingMessages('+' + gainedResources,enemies[i].x,enemies[i].y,20,'gold',true));
+            floatingMessages.push(new FloatingMessages('+' + gainedResources,
+            enemies[i].x,enemies[i].y,20,'gold',true));
             money += gainedResources;
             score += gainedResources;
             enemies[i].died = true;
+            console.log('died')
+            continue;
         }
         let affectedByFan = false;
+        let colliding = false;
         for(let j = 0;j < defenders.length;j++){
             if(defenders[j] && enemies[i] && defenders[j].isFan && defenders[j].y == enemies[i].y){
-                    affectedByFan = true;
+                affectedByFan = true;
+            }
+            if(defenders[j] && enemies[i] && collision(defenders[j],enemies[i]) && !enemies[i].died){
+                colliding = true;
+                defenders[j].health -= 0.05;
+                if(defenders[j].isFire || defenders[j].isFloorTrap){
+                    hurt_sound.play();
+                    enemies[i].health -= 0.2;
+                }
             }
         }
-        if(enemies[i]  && affectedByFan && !enemies[i].died && enemies[i].movement != 0) {
-            enemies[i].movement = enemies[i].fanspeed;
-        }
-        else if(enemies[i] && !enemies[i].died && enemies[i].movement != 0){
-            enemies[i].movement = enemies[i].speed;
+        if(!enemies[i].died){
+            if(colliding){
+                eating.play();
+                if(!enemies[i].colliding){
+                    enemies[i].frame = enemies[i].attackMinFrame;
+                    enemies[i].minFrame = enemies[i].attackMinFrame;
+                    enemies[i].maxFrame = enemies[i].attackMaxFrame;
+                    enemies[i].colliding = true;
+                    enemies[i].movement = 0;
+                }
+            }else{
+                if(enemies[i].colliding){
+                    enemies[i].frame = enemies[i].moveMinFrame;
+                    enemies[i].minFrame = enemies[i].moveMinFrame;
+                    enemies[i].maxFrame = enemies[i].moveMaxFrame;
+                    enemies[i].colliding = false;
+                }
+                enemies[i].movement = affectedByFan ? enemies[i].fanspeed : enemies[i].speed;
+            }
         }
     }
-    if(level===1){
+    if(chosen_level===1){
         addEnemy(200, 416,582,skeleton,5,5,0.3,50,10,-20,60,45,35,44,0,18,35)
-    }else if(level ===2){
+    }else if(chosen_level===2){
         addEnemy(100, 416,582,skeleton,5,5,0.3,50,10,-20,60,45,35,44,0,18,35)
         addEnemy(150, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
-    }else if(level == 3){
+    }else if(chosen_level===3){
         addEnemy(300, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
         addEnemy(100, 416,582,skeleton,5,5,0.3,50,10,-20,60,45,35,44,0,18,35)
-        addEnemy(150, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
-    }else if(level == 4){
+    }else if(chosen_level===4){
         addEnemy(200, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
         addEnemy(400, 416,582,skeleton,5,5,0.3,50,10,-20,60,45,35,44,0,18,35)
         addEnemy(300, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
-    }else if(level == 5){
+    }else if(chosen_level===5){
         addEnemy(300, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
         addEnemy(200, 703,851, pumpkinman, 5,7,0.8,100,25,0,24,17,25,36,0,16,17)
-    }else if(level == 6){
+    }else if(chosen_level===6){
         addEnemy(300, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
         addEnemy(150, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
         addEnemy(200, 703,851, pumpkinman, 5,7,0.8,100,25,0,24,17,25,36,0,16,17)
-    }else if(level == 7){
+    }else if(chosen_level===7){
         addEnemy(100,768,911,ghost,5,7,0.5,100,30,10,38,27,0,9,10,21,22);
-    }else if(level == 8){
+    }else if(chosen_level===8){
         addEnemy(300, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
         addEnemy(300, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
         addEnemy(100,768,911,ghost,5,7,0.5,100,30,10,38,27,0,9,10,21,22);
-    }else if(level == 9){
-        addEnemy(100, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
+    }else if(chosen_level===9){
+        addEnemy(1000, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
         addEnemy(300, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
-        addEnemy(200, 703,851, pumpkinman, 5,7,0.8,100,25,0,24,17,25,36,0,16,17)
+        addEnemy(500, 703,851, pumpkinman, 5,7,0.8,100,25,0,24,17,25,36,0,16,17)
         addEnemy(100,768,911,ghost,5,7,0.5,100,30,10,38,27,0,9,10,21,22);
-    }else if(level == 10){
+    }else if(chosen_level===10){
         addEnemy(100, 416,582,skeleton,5,5,0.7,50,10,-20,34,19,35,44,0,18,19)
         addEnemy(300, 830, 510, black_spider, 5, 6, 0.5, 150, 0, 20, 30,23, 0,6,7,22,23);
         addEnemy(200, 703,851, pumpkinman, 5,7,0.8,100,25,0,24,17,25,36,0,16,17)
@@ -755,7 +780,7 @@ function addEnemy(rate, spriteWidth, spriteHeight, spriteSheet, frameRate,
     moveMaxFrame, moveMinFrame, attackMinFrame, attackMaxFrame,dieMinFrame , dieMaxFrame, initialFrame){
     if( frame % rate === 0 && score <= winningScore){
         let vertialPosition = Math.floor(Math.random()*5+1) * cellSize + cellGap;
-        let x = (spriteSheet==ghost) ? canvas.width - (Math.random()*300+100) : canvas.width;
+        let x = (spriteSheet==ghost) ? canvas.width-(Math.random()*300+100) : canvas.width;
         enemies.push(new Enemy(x, vertialPosition, spriteWidth, spriteHeight, 
             spriteSheet, frameRate, sizeFactor, speed, health, Yoffset,Xoffset,moveMaxFrame
             ,moveMinFrame, attackMinFrame, attackMaxFrame,dieMinFrame , dieMaxFrame, initialFrame));
@@ -794,13 +819,13 @@ class Resources {
         //ctx.fillStyle = 'purple';
         //ctx.fillRect(this.x,this.y,this.width, this.height);
         ctx.drawImage(this.spriteSheet, this.frame * this.spriteWidth, 0
-            , this.spriteWidth, this.spriteHeight, this.x-this.Xoff, this.y-this.Yoff,this.spriteWidth/this.sizeFactor, 
-            this.spriteHeight/this.sizeFactor);
+            , this.spriteWidth, this.spriteHeight, this.x-this.Xoff, this.y-this.Yoff
+            ,this.spriteWidth/this.sizeFactor, this.spriteHeight/this.sizeFactor);
     }
 }
 function handleResources(){
     if (frame % 250 === 0 && score < winningScore){
-        resources.push(new Resources(522,514,0,pumpkin, coin_sound, 50,7, 25,10,10));
+        resources.push(new Resources(522,514,0,pumpkin, pumpkin_collect_sound, 50,7, 25,10,10));
     }
     for(let i = 0;i < resources.length;i++){
         resources[i].update()
@@ -823,21 +848,24 @@ function handleGamingUI(){
     if(pause) ctx.drawImage(pause_pressed, 800,10,70, 70);
     ctx.drawImage(return_startscreen, 725,10,70, 70);
     ctx.drawImage(choose_defender_background, canvas.width-250,canvas.height-50,250, 50);
-    ctx.fillStyle = 'gold';
+    ctx.fillStyle = 'rgba(116,116,106,255)';
     ctx.font = 'bold 20px Cursive';
     ctx.fillText(money, 720, 580);
-    ctx.drawImage(coin, 685,560,30, 30);
-    ctx.fillText("Level:" + level, 790, 580);
+    ctx.drawImage(pumpkin, 685,560,30, 30);
+    ctx.fillText("Level:" + chosen_level, 790, 580);
     if(score >= winningScore && enemies.length === 0){
         gaming = false;
-        level++;
+        feather++;
+        if(chosen_level <= 10){
+            chosen_level++;
+            level = Math.max(level, chosen_level);
+        }
         interlevel_sound.play();
         interLevel = true;
     } 
 }
 canvas.addEventListener('click', function(){
     if(mouse.x > 800 && mouse.x < 870 && mouse.y < 80 && pause == false){
-        console.log('paue')
         button_press_sound.play()
         gaming = false;
         pause = true;
@@ -868,10 +896,6 @@ canvas.addEventListener('click', function(){
 //////////////////////////////////////////////////////////////////////////////////////////
 // Start Screen
 //////////////////////////////////////////////////////////////////////////////////////////
-let ghost_rise = {
-    frame: 20,
-    maxFrame: 24,
-}
 let start_screen_fire = {
     frame: 0,
     maxFrame: 5
@@ -881,13 +905,47 @@ let start_screen_spider = {
     y: 515,
     frame: 23,
     maxFrame: 30,
-    minFrame: 23
+    minFrame: 23,
+    frameRate: 5,
+    speed: 0.5
 }
+let owl = {
+    x: 1000,
+    y: 515,
+    frame: 10,
+    maxFrame: 29,
+    minFrame: 10,
+    idleMaxFrame: 29,
+    idleMinFrame: 10,
+    flapMaxFrame: 9,
+    flapMinFrame: 0
+}
+let start_pumpkinman = {
+    x: 1000,
+    y: 515,
+    frame: 16,
+    maxFrame: 16,
+    minFrame: 16,
+}
+let lattern = {
+    x: 700,
+    y:100,
+    frame: 0,
+    maxFrame: 3,
+    minFrame: 0
+}
+
 let start_button_pressed = false;
 let credits_button_pressed = false;
 let info_button_pressed = false;
 let show_credits_panel = false;
 let show_info_panel = false;
+let pumpkin2_img = pumpkin2;
+let latternLifted = false;
+let trolley_button_pressed = false;
+let list_button_pressed = false;
+let show_choose_level_panel = false;
+let show_shop_panel = false;
 
 addEventListener('mousedown',function(e){
     if(startscreen){
@@ -902,8 +960,61 @@ addEventListener('mousedown',function(e){
         }else if(mouse.x > 260 && mouse.x < 310 && mouse.y > 390 && mouse.y < 460){
             info_button_pressed = true;
             button_press_sound.play()
+        }else if(mouse.x < 90 && mouse.x > 20 && mouse.y > 10 && mouse.y < 90){
+            trolley_button_pressed = true;
+            show_shop_panel = true;
+        }else if(mouse.x < 170 && mouse.x > 100 && mouse.y > 10 && mouse.y < 90){
+            list_button_pressed = true;
+            show_choose_level_panel = true;
         }else if(mouse.x < 630 && mouse.x > 580 && mouse.y > 250 && mouse.y < 300 && show_info_panel){
             show_info_panel = false;
+        }else if(mouse.x < 650 && mouse.x > 600 && mouse.y > 30 && mouse.y < 80 && show_choose_level_panel){
+            show_choose_level_panel = false;
+        }else if(mouse.x < 800 && mouse.x > 750 && mouse.y > 70 && mouse.y < 120 && show_shop_panel){
+            show_shop_panel = false;
+        }
+        if(mouse.x > 700 && mouse.x < 825 && mouse.y > 100 && mouse.y < 225){
+            latternLifted = true;
+        }
+        if(mouse.x > 500 && mouse.x < 530 && mouse.y > 75 && mouse.y < 525){
+            chosen_level = Math.ceil((mouse.y - 75)/45);
+            if(chosen_level <= level){
+                interLevel = true;
+                startscreen = false;
+                show_choose_level_panel = false;
+            }
+        }
+        if(show_shop_panel){
+            if(mouse.x > 700 && mouse.x < 825 && mouse.y > 100 && mouse.y < 225){
+                if(feather >= 10){
+                    feather -= 10;
+                    own_archer = true;
+                }else return;
+            } 
+            if(mouse.x > 400 && mouse.x < 570 && mouse.y > 100 && mouse.y < 225) {
+                if(feather >= 10){
+                    own_cannon = true
+                    feather -= 10;
+                }else return;
+            }
+            if(mouse.x > 134 && mouse.x < 300 && mouse.y > 100 && mouse.y < 225){
+                if(feather >= 15){
+                    own_fan = true
+                    feather -= 15;
+                }else return;
+            }
+            if(mouse.x > 134 && mouse.x < 300 && mouse.y > 350 && mouse.y < 470){
+                if(feather >= 5){
+                    own_fire = true
+                    feather -= 5;
+                }else return;
+            }
+            if(mouse.x > 400 && mouse.x < 570 && mouse.y > 350 && mouse.y < 470) {
+                if(feather >= 5){
+                    own_floor_trap = true
+                    feather -= 5;
+                }else return;
+            }
         }
     }
 
@@ -911,6 +1022,8 @@ addEventListener('mousedown',function(e){
 addEventListener('mouseup',function(e){
     if(startscreen){
         if(mouse.x < 342 && mouse.x > 150 && mouse.y > 200 && mouse.y < 296){
+            startscreen_music.pause();
+            fire_sound.pause();
             gaming = false;
             interLevel = true;
             pause = false;
@@ -924,62 +1037,119 @@ addEventListener('mouseup',function(e){
         start_button_pressed = false;
         credits_button_pressed = false;
         info_button_pressed = false;
+        trolley_button_pressed = false;
+        list_button_pressed = false;
+        latternLifted = false;
     }
 })
 
 function handleStartScreen(){
     startscreen_music.play();
+    fire_sound.play();
     ctx.drawImage(startscreen_background, 0,0,canvas.width,canvas.height)
-    if(frame > 50){
-        ctx.drawImage(startscreen_dialog, 465,225,150,105)
-        ctx.drawImage(connector, 610,250,30,20)
-        ctx.fillStyle = 'black';
-        ctx.font = 'bold 15px Cursive';
-        ctx.fillText("We assembled ", 485, 250); 
-        ctx.fillText("the evil army", 485, 270); 
-        ctx.fillText(", we'll destroy", 485, 290); 
-        ctx.fillText("your villiage.", 485, 310); 
-    }
     ctx.drawImage(startscreen_panel, 100,100,1182/4,1650/4)
     let startButtonImg = (start_button_pressed) ? start_button_pressed_img : start_button_img;
     let creditsButtonImg = (credits_button_pressed) ? credits_button_pressed_img : credits_button_img;
     let infoButtonImg = (info_button_pressed) ? info_button_pressed_img : info_button_img;
+    let trolleyButtonImg = (trolley_button_pressed) ? trolley_button_pressed_img : trolley_button_img;
+    let listButtonImg = (list_button_pressed) ? list_button_pressed_img : list_button_img;
     ctx.drawImage(startButtonImg, 155,200,180,85)
     ctx.drawImage(creditsButtonImg, 155,295,180,85)
     ctx.drawImage(infoButtonImg, 260,390,70,70)
+    ctx.drawImage(trolleyButtonImg, 20,10,70,70)
+    ctx.drawImage(listButtonImg, 100,10,70,70)
+    ctx.fillStyle = 'rgba(116,116,106,255)';
+    ctx.font = '50px Fantasy';
+    ctx.fillText("LV"+level, 160, 445); 
+    ctx.drawImage(startscreen_pumpkinman, start_pumpkinman.frame*703, 0, 703,851,450,120,703/2,851/2);
     if(show_credits_panel) ctx.drawImage(credits_panel, 290, 60,360,480)
     if(show_credits_panel) ctx.drawImage(close_button, 540, 120,50,50)
     if(show_info_panel) ctx.drawImage(info_panel, 210, 160,480,360)
     if(show_info_panel) ctx.drawImage(close_button, 580, 250,50,50)
-    if(frame % 20 === 0){
-        if(ghost_rise.frame == 12){
-            evil_laugh.play();
-        }
-        ghost_rise.frame++;
-        if(ghost_rise.frame >= ghost_rise.maxFrame) {
-            ghost_rise.frame = 0;
-            ghost_rise.maxFrame = 19;
+    ctx.drawImage(fire, start_screen_fire.frame*1034, 0, 1034,1034,350,400,1034/6,1034/6);
+    if(show_choose_level_panel){
+        ctx.drawImage(choose_level_panel, 290, 20,320,568)
+        ctx.drawImage(close_button, 600, 30,50,50)
+        ctx.fillStyle = 'rgba(116,116,106,255)';
+        ctx.font = '40px Fantasy';
+        for(let i = 0;i < 10;i++){
+            ctx.fillStyle = (i + 1 <= level) ? 'rgba(116,116,106,255)' : 'rgba(57,57,51,255)';
+            ctx.fillText("LEVEL "+(i+1), 360, 120+i*45); 
+            ctx.drawImage(right_arrow, 500, 85+i*45,30,30)
         }
     }
-    if(frame % 5 == 0){
-        start_screen_fire.frame++;
+    ctx.drawImage(pumpkin, -30,350,517/2,517/2)
+    ctx.drawImage(pumpkin2_img, 100,450,517/4,517/4)
+    ctx.drawImage(black_spider, start_screen_spider.frame*830, 0, 830,510,start_screen_spider.x,
+        start_screen_spider.y,830/6,510/6);
+    ctx.drawImage(owl_img, owl.frame*916, 0, 916,611,180,20,916/6,611/6);
+    ctx.drawImage(pole, 734,60,527/4,3254/4)
+    if(!latternLifted) ctx.drawImage(lattern_img, lattern.frame*522, 0, 522,538,lattern.x,
+        lattern.y,522/4,538/4);
+    if(latternLifted) ctx.drawImage(lattern_img, lattern.frame*522, 0, 522,538,mouse.x-65,
+        mouse.y,522/4,538/4);
+    if(show_shop_panel){
+        ctx.drawImage(shop_panel, 0, 0,900,600)
+        ctx.drawImage(close_button, 750, 70,50,50)
+        ctx.fillStyle = 'gold';
+        ctx.font = '60px Fantasy';
+        ctx.fillText("* "+feather, 650, 500); 
+    }
+    if(mouse.x < 330 && mouse.x > 180 && mouse.y > 20 && mouse.y < 120){
+        owl_sound.play();
+        owl.minFrame = owl.flapMinFrame;
+        owl.maxFrame = owl.flapMaxFrame;
+    }else{
+        owl.minFrame = owl.idleMinFrame;
+        owl.maxFrame = owl.idleMaxFrame;
+    }
+    if(mouse.x < 225 && mouse.x > 100 && mouse.y > 450 && mouse.y < 575){
+        pumpkin2_img = pumpkin2_light;
+    }else{
+        pumpkin2_img = pumpkin2;
+    }
+    if(mouse.x < 750 && mouse.x > 400 && mouse.y > 120 && mouse.y < 520 && start_pumpkinman.minFrame != 0){
+        start_pumpkinman.maxFrame = 24;
+    }
+    if(frame % start_screen_spider.frameRate == 0){
         start_screen_spider.frame++;
-        if(start_screen_fire.frame >= start_screen_fire.maxFrame) {
-            start_screen_fire.frame = 0;
-        }
         if(start_screen_spider.frame >= start_screen_spider.maxFrame) {
             start_screen_spider.frame = start_screen_spider.minFrame;
         }
     }
+    if(frame % 5 == 0){
+        lattern.frame++;
+        start_screen_fire.frame++;
+        owl.frame++;
+        start_pumpkinman.frame++;
+        if(start_screen_fire.frame >= start_screen_fire.maxFrame) {
+            start_screen_fire.frame = 0;
+        }
+        if(owl.frame >= owl.maxFrame) {
+            owl.frame = owl.minFrame;
+        }
+        if(lattern.frame >= lattern.maxFrame) {
+            lattern.frame = lattern.minFrame;
+        }
+        if(start_pumpkinman.frame >= start_pumpkinman.maxFrame) {
+            if(start_pumpkinman.frame == 24){
+                start_pumpkinman.minFrame = 0;
+                start_pumpkinman.maxFrame = 15;
+            }
+            start_pumpkinman.frame = start_pumpkinman.minFrame;
+        }
+    }
     if(start_screen_spider.x < -canvas.width){
         start_screen_spider.x = 1000
+        start_screen_spider.speed = 0.5;
+        start_screen_spider.frameRate = 5;
     }
-    start_screen_spider.x -= 0.5;
-    ctx.drawImage(ghost_rise_up, ghost_rise.frame*768, 0, 768,911,canvas.width-350,100,768/2,911/2);
-    ctx.drawImage(fire, start_screen_fire.frame*1034, 0, 1034,1034,350,400,1034/6,1034/6);
-    ctx.drawImage(pumpkin, -10,350,517/2,517/2)
-    ctx.drawImage(black_spider, start_screen_spider.frame*830, 0, 830,510,start_screen_spider.x,
-        start_screen_spider.y,830/6,510/6);
+    start_screen_spider.x -= start_screen_spider.speed;
+    if(mouse.x < start_screen_spider.x+140 && mouse.x > start_screen_spider.x && 
+        mouse.y+100 > start_screen_spider.y && mouse.y+100 < canvas.height && latternLifted){
+        start_screen_spider.speed = 4;
+        start_screen_spider.frameRate = 2;
+    }
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 // GameOver
@@ -1000,36 +1170,46 @@ function handleGameover(){
     evil_laugh.play();
     ctx.drawImage(letter,300,130,310,310);
     ctx.font = 'bold 20px Cursive';
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
     ctx.fillText("Press SPACE to restart game", 310, 20); 
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 // Interlevel
 //////////////////////////////////////////////////////////////////////////////////////////
 addEventListener('keypress',function(e){
-    if(e.code == "Space" && interLevel == true && level <= 10){
-        interLevel = false;
-        gaming = true;
-        pause = false;
-        gameover = false;
-        startscreen = false; 
-        score = 0;
-        money = 150;
-        defenders.splice(0,defenders.length);
-        projectiles.splice(0,projectiles.length);
-        evil_laugh.play();
+    if(e.code == "Space" && interLevel == true){
+        if(chosen_level <= 10){
+            interLevel = false;
+            gaming = true;
+            pause = false;
+            gameover = false;
+            startscreen = false; 
+            score = 0;
+            money = 150;
+            defenders.splice(0,defenders.length);
+            projectiles.splice(0,projectiles.length);
+            evil_laugh.play();
+        }else{
+            interLevel = false;
+            gaming = false;
+            pause = false;
+            gameover = false;
+            startscreen = true; 
+            chosen_level = 10;
+            level = 10;
+        }
     }
 })
 function handleInterLevel(){
-    if(level == 11){
+    if(chosen_level == 11){
         game_finish_music.play();
         ctx.drawImage(game_finish_background, 0,0,canvas.width, canvas.height);
         ctx.drawImage(thank_letter,300,160,310,240);
     }else{
         ctx.fillStyle = 'rgb(146,146,134)'
-        ctx.font = 'bold 50px Cursive';
+        ctx.font = 'bold 50px Georgia';
         ctx.drawImage(interlevel_panel,300,160,310,240);
-        ctx.fillText("LEVEL " + level, 350, 250); 
+        ctx.fillText("LEVEL " + chosen_level, 350, 250); 
         ctx.font = 'bold 20px Cursive';
         ctx.fillText("Press SPACE to Begin", 350, 350); 
     }
